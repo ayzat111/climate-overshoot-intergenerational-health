@@ -4,8 +4,8 @@ This repository contains the data processing and visualization pipeline for the 
 
 ## 🌟 Research Highlights
 - **Birth-Cohort Analysis**: Assessing lifetime heatwave exposure for global cohorts from 1950 to 2120.
-- **Overshoot Dynamics**: Investigating how a "peak-and-decline" temperature trajectory (SSP5-3.4OS) reshapes generational risk distribution.
-- **Risk Misalignment**: Highlighting the discrepancy between peak exposure (2040 cohort) and peak health risk (2020 cohort) due to elderly physiological vulnerability.
+- **Path-Dependent Risk Reshaping**: Investigating how the "peak-and-decline" temperature trajectory of SSP5-3.4OS alters generational risk distribution.
+- **Exposure-Health Risk Misalignment**: Highlighting the discrepancy between peak exposure and peak health risk due to physiological vulnerability.
 - **Mitigation Impact**: Quantifying the benefits of aggressive mitigation in reducing peak health burdens.
 
 ## 📂 Repository Structure
