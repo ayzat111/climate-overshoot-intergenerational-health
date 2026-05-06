@@ -2,7 +2,7 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from functions import * 
+from functions import identify_heatwave, global_mean, make_ssp534os_full
 
 # 1. 加载数据
 CSV_NAME = 'heatwave_exposure_2014-2100_ssp534full.csv'
