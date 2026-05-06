@@ -57,3 +57,43 @@ def make_ssp534os_full(df, model):
     # Filter out original incomplete SSP534os entries and merge with synthesized timeline
     df_out = df[~((df['model']==model) & (df['scenario']=='ssp534os'))]
     return pd.concat([df_out, df585, df534], ignore_index=True)
+
+def open_concat(paths, dask_kwargs={'chunks': {'time': 365}}):
+    """Concatenates multiple files along the time dimension."""
+    if len(paths) == 1:
+        return xr.open_dataset(paths[0], **dask_kwargs)
+    return xr.open_mfdataset(paths, combine='by_coords', **dask_kwargs)
+
+def identify_heatwave_days(da, thresh):
+    """
+    Calculates annual total heatwave days.
+    A heatwave day is defined as any day that is part of a 3+ day exceedance streak.
+    """
+    da = remap_to_common(da)
+    exceed = da > thresh
+    
+    # Calculate streaks
+    cum = exceed.cumsum(dim='time')
+    streak = cum - cum.where(~exceed).ffill(dim='time').fillna(0)
+    
+    # Identify all days belonging to a streak of at least 3 days
+    # First, mark the end points, then backfill to cover the entire duration
+    hw_events = (streak >= 3)
+    # To ensure the first 2 days of a 3-day streak are also counted:
+    # We use a rolling maximum or similar logic to 'spread' the True value backward
+    hw_days = hw_events.rolling(time=3, center=False).max().shift(time=-2).fillna(False) | hw_events
+    
+    # Sum days annually
+    annual_days = hw_days.resample(time='Y').sum()
+    return annual_days.assign_coords(year=('time', annual_days.time.dt.year.data))
+
+def make_ssp534os_full_days(df, model):
+    """
+    Specifically handles the concatenation for SSP534os duration data.
+    Merges historical/SSP585 (up to 2039) with SSP534os (from 2040).
+    """
+    df585 = df.query("model==@model & scenario=='ssp585' & year<=2039").copy().assign(scenario='ssp534os')
+    df534 = df.query("model==@model & scenario=='ssp534os'").copy()
+    
+    df_out = df[~((df['model']==model) & (df['scenario']=='ssp534os'))]
+    return pd.concat([df_out, df585, df534], ignore_index=True)
