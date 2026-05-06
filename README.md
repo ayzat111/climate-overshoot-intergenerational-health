@@ -24,7 +24,10 @@ This repository contains the data processing and visualization pipeline for the 
 ## 📊 Data Availability
 Raw climate data and intermediate processed results are **not** included in this repository due to size constraints.Users must obtain the following data to replicate the analysis:
 - **Climate Projections**: Daily maximum temperature (tasmax) from CMIP6 (Historical, SSP1-2.6, SSP2-4.5, SSP5-8.5, and SSP5-3.4OS) are available via the [ESGF LLNL node](https://esgf-node.llnl.gov/search/cmip6/).
-- **Population Data**: Daily maximum temperature (tasmax) from CMIP6
+- **Population Data**: 
+  - Historical (1950–2020): Based on the UN World Population Prospects (WPP).
+  - Future (2020–2100): Gridded SSP1-5 projections (0.5° resolution) derived from cohort-component models.
+  - Extended (2100–2200): Assumed constant population distribution by extending 2100 projections to focus on climate-driven risks.
 - **Data Integration**: The analysis pipeline in `functions.py` performs spatial harmonization and population-weighting across these multi-source datasets.
 
 ## ✉️ Contact
