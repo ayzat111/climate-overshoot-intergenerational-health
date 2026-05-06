@@ -105,6 +105,23 @@ def global_mean(da):
     weight = cos_lat * (da * 0 + 1)
     return (da * weight).sum(dim=('lat', 'lon')) / weight.sum(dim=('lat', 'lon'))
 
+def population_weighted_mean(da, pop):
+    """
+    Calculates population-weighted mean for a climate variable.
+    da: DataArray (time/year, lat, lon)
+    pop: DataArray (lat, lon) or (time, lat, lon) - population distribution
+    """
+    # Ensure the heatwave data is interpolated to the population grid
+    da_interp = da.interp_like(pop, method='nearest')
+    
+    # Calculate weights: Pop_grid / Total_Global_Pop
+    # We sum over lat and lon to get the total population at each time step
+    weights = pop / pop.sum(dim=['lat', 'lon'])
+    
+    # Weighted average
+    weighted_mean = (da_interp * weights).sum(dim=['lat', 'lon'])
+    return weighted_mean
+
 # =============================================================================
 # 4. SCENARIO SYNTHESIS (OVERSHOOT HANDLING)
 # =============================================================================
@@ -121,3 +138,33 @@ def make_ssp534os_full_days(df, model):
     """Concatenates SSP585 (up to 2039) and SSP534os (from 2040) for duration data."""
     # Logic is identical to frequency; kept separate for workflow clarity
     return make_ssp534os_full(df, model)
+
+# =============================================================================
+# 5. COHORT ANALYSIS (NEW SECTION)
+# =============================================================================
+
+def calculate_lifetime_exposure(df_series, birth_year, lifespan=75):
+    """
+    Integrates total exposure over a fixed lifespan for a specific birth cohort.
+    
+    Parameters:
+    -----------
+    df_series : pandas.Series
+        The time-series of heatwave days/frequency with 'year' as the index.
+    birth_year : int
+        The year the cohort was born.
+    lifespan : int
+        Number of years to integrate (default 75 for life expectancy).
+        
+    Returns:
+    --------
+    float : Total cumulative exposure over 75 years.
+    """
+    start_yr = birth_year
+    end_yr = birth_year + lifespan - 1 # e.g., 1990 to 2064 is 75 years
+    
+    if start_yr in df_series.index and end_yr in df_series.index:
+        return df_series.loc[start_yr:end_yr].sum()
+    else:
+        # Returns NaN if the time series doesn't cover the full lifespan
+        return np.nan
