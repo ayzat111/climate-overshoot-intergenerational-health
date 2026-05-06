@@ -9,15 +9,17 @@ This repository contains the data processing and visualization pipeline for the 
 - **Mitigation Impact**: Quantifying the benefits of aggressive mitigation in reducing peak health burdens.
 
 ## 📂 Repository Structure
-- `functions.py`: **Core Analytical Engine.**
-  - Climate data remapping and ensemble averaging.
-  - Heatwave identification (3-day exceedance streak logic).
-  - Lifetime exposure integration across birth cohorts.
-  - Scenario-specific data merging.
-- `plot_fig1a.py`: Visualizes global trends of heatwave **frequency** (events/year).
-- `plot_fig1b.py`: Visualizes global trends of heatwave **duration** (days/year).
-- `plot_fig1c.py`: Visualizes global trends of heatwave intensity (°C·day).
-- `plot_fig2-6.py`: *(In Development)* Spatial risk maps, intergenerational inequality plots, and cohort-specific health risk projections.
+- `functions.py`: **The Analytical Engine.**
+  - **Climate Logic**: Heatwave identification (3-day streaks), frequency, duration, and intensity (°C·day).
+  - **Spatial Logic**: Population-weighted aggregation and 1°x1° grid harmonization.
+  - **Cohort Logic**: 75-year lifetime exposure integration and overshoot scenario synthesis.
+- `plot_fig1a.py`: Global trends of heatwave **frequency** (events/year).
+- `plot_fig1b.py`: Global trends of heatwave **duration** (days/year).
+- `plot_fig1c.py`: Global trends of heatwave **intensity** (°C·day).
+- `plot_fig2.py`: **Intergenerational Exposure.**
+  - Includes population-weighted time series (1950–2200).
+  - Comparative bar charts for birth cohorts (1990, 2020, 2050, 2080).
+- `plot_future_figs.py`: *(In Development)* Spatial inequality maps and elderly health risk projections.
 
 ## 📊 Data Availability
 Raw climate data and intermediate processed results are **not** included in this repository due to size constraints.
