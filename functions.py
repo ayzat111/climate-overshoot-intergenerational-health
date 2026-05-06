@@ -70,6 +70,31 @@ def identify_heatwave_days(da, thresh):
     annual_days = hw_days.resample(time='Y').sum()
     return annual_days.assign_coords(year=('time', annual_days.time.dt.year.data))
 
+def identify_heatwave_intensity(da, thresh):
+    """
+    Calculates annual cumulative heatwave intensity.
+    Intensity is defined as the sum of (Tmax - threshold) for all days 
+    belonging to a 3+ day exceedance streak.
+    """
+    da = remap_to_common(da)
+    diff = da - thresh
+    is_hot = diff > 0
+    
+    # Identify streaks of at least 3 days
+    hot_3d = is_hot.rolling(time=3, center=False).sum() >= 3
+    
+    # Backfill to ensure all days in the 3-day window are marked
+    hw_day = (hot_3d | 
+              hot_3d.shift(time=-1, fill_value=False) | 
+              hot_3d.shift(time=-2, fill_value=False))
+    
+    # Extract exceedance values only during heatwave days
+    hw_exceedance = diff.where(hw_day, 0.0)
+    
+    # Sum exceedance annually
+    annual_intensity = hw_exceedance.resample(time='Y').sum()
+    return annual_intensity.assign_coords(year=('time', annual_intensity.time.dt.year.data))
+
 # =============================================================================
 # 3. SPATIAL & STATISTICAL ANALYSIS
 # =============================================================================
