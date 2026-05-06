@@ -1,27 +1,25 @@
-# Overshoot pathways reshape unequal heatwave health burdens across generations
+# Overshoot Pathways Reshape Unequal Heatwave Health Burdens Across Generations
 
-This repository contains the Python implementation for analyzing global heatwave frequency and exposure under various CMIP6 climate scenarios (SSP1-2.6, SSP2-4.5, SSP5-8.5, and SSP5-3.4os).
+This repository contains the data processing and visualization pipeline for the research on intergenerational heatwave exposure and health risks under climate overshoot scenarios (SSP5-3.4OS).
 
-## 📌 Overview
-The project focuses on calculating heatwave thresholds based on historical baselines (1850-1900) and projecting future exposure trends through 2100. It includes logic for:
-- Spatial remapping and interpolation of CMIP6 climate data.
-- 95th percentile threshold calculation.
-- Heatwave identification using a 3-day exceedance streak logic.
-- Multi-model ensemble (MME) statistical analysis.
+## 🌟 Research Highlights
+- **Birth-Cohort Analysis**: Assessing lifetime heatwave exposure for global cohorts from 1950 to 2120.
+- **Overshoot Dynamics**: Investigating how a "peak-and-decline" temperature trajectory (SSP5-3.4OS) reshapes generational risk distribution.
+- **Risk Misalignment**: Highlighting the discrepancy between peak exposure (2040 cohort) and peak health risk (2020 cohort) due to elderly physiological vulnerability.
+- **Mitigation Impact**: Quantifying the benefits of aggressive mitigation (C2 scenario) in reducing peak health burdens.
 
-## 📂 Project Structure
-- `functions.py`: **Core Computational Engine.** Contains all backend logic for data processing, remapping, heatwave identification, and global weighting.
-- `plot_fig1a.py`: Script to generate Figure 1a (Global Heatwave Frequency Trend).
-- *(Planned)* `plot_fig2.py` to `plot_fig6.py`: Scripts for subsequent spatial risk maps and intergenerational exposure analysis.
+## 📂 Repository Structure
+- `functions.py`: **Core Analytical Engine.**
+  - Climate data remapping and ensemble averaging.
+  - Heatwave identification (3-day exceedance streak).
+  - Lifetime exposure integration across birth cohorts.
+  - Scenario-specific data merging.
+- `plot_fig1a.py`: Global trends of heatwave frequency across different SSP pathways.
+- `plot_fig2-6.py`: (In Development) Spatial risk maps, intergenerational inequality plots, and cohort-specific health risk projections.
 
-## 🛠 Installation & Requirements
-This project requires Python 3.x and the following scientific libraries:
-- **xarray**: For N-dimensional array processing.
-- **pandas**: For tabular data manipulation.
-- **numpy**: For numerical operations.
-- **seaborn/matplotlib**: For high-quality academic visualization.
-- **dask**: For handling large-scale climate datasets efficiently.
-
-You can install the dependencies via pip:
+## 🛠 Prerequisites
+- **Python**: 3.9+
+- **Core Libraries**: `xarray`, `pandas`, `numpy`, `dask` (for processing large CMIP6 datasets).
+- **Visualization**: `seaborn`, `matplotlib`, `cartopy` (for spatial mapping).
 ```bash
-pip install xarray pandas numpy seaborn matplotlib dask netCDF4
+pip install xarray pandas numpy seaborn matplotlib dask cartopy netCDF4
