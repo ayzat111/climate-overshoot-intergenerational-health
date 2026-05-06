@@ -16,9 +16,7 @@ This repository contains the data processing and visualization pipeline for the 
 - `plot_fig1a.py`: Global trends of heatwave **frequency** (events/year).
 - `plot_fig1b.py`: Global trends of heatwave **duration** (days/year).
 - `plot_fig1c.py`: Global trends of heatwave **intensity** (°C·day).
-- `plot_fig2.py`: **Intergenerational Exposure.**
-  - Includes population-weighted time series (1950–2200).
-  - Comparative bar charts for birth cohorts (1990, 2020, 2050, 2080).
+- `plot_fig2.py`: Temporal evolution of heatwave hazards and intergenerational disparities in lifetime exposure under an overshoot pathway.
 - `plot_future_figs.py`: *(In Development)* Spatial inequality maps and elderly health risk projections.
 
 ## 📊 Data Availability
