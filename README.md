@@ -13,9 +13,7 @@ This repository contains the data processing and visualization pipeline for the 
   - **Climate Logic**: Heatwave identification (3-day streaks), frequency, duration, and intensity (°C·day).
   - **Spatial Logic**: Population-weighted aggregation and 1°x1° grid harmonization.
   - **Cohort Logic**: 75-year lifetime exposure integration and overshoot scenario synthesis.
-- `plot_fig1a.py`: Global trends of heatwave **frequency** (events/year).
-- `plot_fig1b.py`: Global trends of heatwave **duration** (days/year).
-- `plot_fig1c.py`: Global trends of heatwave **intensity** (°C·day).
+- `plot_fig1.py`: Generates the multi-panel figure covering heatwave frequency, duration, and intensity (2015–2100).
 - `plot_fig2.py`: Temporal evolution of heatwave hazards and intergenerational disparities in lifetime exposure under an overshoot pathway.
 - `plot_future_figs.py`: *(In Development)* Spatial inequality maps and elderly health risk projections.
 
