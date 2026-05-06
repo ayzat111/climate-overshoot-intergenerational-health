@@ -16,6 +16,7 @@ This repository contains the data processing and visualization pipeline for the 
   - Scenario-specific data merging.
 - `plot_fig1a.py`: Visualizes global trends of heatwave **frequency** (events/year).
 - `plot_fig1b.py`: Visualizes global trends of heatwave **duration** (days/year).
+- `plot_fig1c.py`: Visualizes global trends of heatwave intensity (°C·day).
 - `plot_fig2-6.py`: *(In Development)* Spatial risk maps, intergenerational inequality plots, and cohort-specific health risk projections.
 
 ## 📊 Data Availability
