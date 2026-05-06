@@ -26,13 +26,10 @@ Raw climate data and intermediate processed results are **not** included in this
   - Extended (2100–2200): Assumed constant population distribution by extending 2100 projections to focus on climate-driven risks.
 - **Data Integration**: The analysis pipeline in `functions.py` performs spatial harmonization and population-weighting across these multi-source datasets.
 
+## 🛠 Prerequisites
+- **Python**: 3.9+
+- **Key Libraries**: xarray, pandas, numpy, dask, seaborn, matplotlib, cartopy.
+
 ## ✉️ Contact
 For questions regarding the methodology or requests for collaboration, please contact:
 **Ayzat Tursen** - ayzat017@gmail.com
-
-## 🛠 Prerequisites
-- **Python**: 3.9+
-- **Core Libraries**: `xarray`, `pandas`, `numpy`, `dask` (for processing large-scale climate datasets).
-- **Visualization**: `seaborn`, `matplotlib`, `cartopy` (for spatial mapping).
-```bash
-pip install xarray pandas numpy seaborn matplotlib dask cartopy netCDF4
