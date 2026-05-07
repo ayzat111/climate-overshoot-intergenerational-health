@@ -1,6 +1,8 @@
 # Overshoot Pathways Reshape Unequal Heatwave Health Burdens Across Generations
 
-This repository contains the data processing and visualization pipeline for the research on intergenerational heatwave exposure and health risks under climate overshoot scenarios (SSP5-3.4OS).
+This repository contains the data processing and visualization pipeline for the research on intergenerational heatwave exposure and health risks under climate overshoot scenarios (SSP5-3.4OS). The paper is under review.
+
+All data and scripts are publicly available; a few remaining scripts are still being finalized and will be uploaded upon acceptance of the paper.
 
 ## 🌟 Research Highlights
 - **Birth-Cohort Analysis**: Assessing lifetime heatwave exposure for global cohorts from 1950 to 2120.
@@ -15,7 +17,7 @@ This repository contains the data processing and visualization pipeline for the 
   - **Cohort Logic**: 75-year lifetime exposure integration and overshoot scenario synthesis.
 - `plot_fig1.py`: Generates the multi-panel figure covering heatwave frequency, duration, and intensity (2015–2100).
 - `plot_fig2.py`: Temporal evolution of heatwave hazards and intergenerational disparities in lifetime exposure under an overshoot pathway.
-- `plot_future_figs.py`: *(In Development)* Spatial inequality maps and elderly health risk projections.
+- `plot_future_figs.py`: *(Being finalized)* Spatial inequality maps and elderly health risk projections.
 
 ## 📊 Data Availability
 Raw climate data and intermediate processed results are **not** included in this repository due to size constraints.Users must obtain the following data to replicate the analysis:
@@ -31,5 +33,8 @@ Raw climate data and intermediate processed results are **not** included in this
 - **Key Libraries**: xarray, pandas, numpy, dask, seaborn, matplotlib, cartopy.
 
 ## ✉️ Contact
-For questions regarding the methodology or requests for collaboration, please contact:
-**Ayzat Tursen** - ayzat017@gmail.com
+For questions regarding the methodology detail, please contact:
+**Ayzat Tursen** at **Peking University** - ayzat017@gmail.com
+
+For academic collaborations, please contactt:
+**Bo Fu** (Supervisor) at **Peking University** - pkufubo@pku.edu.cn
