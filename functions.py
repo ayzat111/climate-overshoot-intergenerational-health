@@ -168,3 +168,96 @@ def calculate_lifetime_exposure(df_series, birth_year, lifespan=75):
     else:
         # Returns NaN if the time series doesn't cover the full lifespan
         return np.nan
+        
+# =============================================================================
+# 6. ENSEMBLE STATISTICS & ERROR PROPAGATION
+# =============================================================================
+
+import glob
+import os
+
+def get_ensemble_stats_with_variance(directory, pattern, col_name='hw_days'):
+    """
+    Loads all model CSV files in a directory and calculates annual ensemble mean 
+    and inter-model variance. Used for cross-generational error propagation.
+    
+    Parameters:
+    -----------
+    directory : str
+        Path to the directory containing processed CSV files.
+    pattern : str
+        Glob pattern to match files (e.g., "*_ts.csv").
+    col_name : str
+        The column to analyze (default: 'hw_days').
+        
+    Returns:
+    --------
+    mean_ts : pandas.Series
+        Multi-model mean time-series.
+    var_ts : pandas.Series
+        Inter-model variance (Standard Deviation squared) time-series.
+    """
+    files = [f for f in glob.glob(os.path.join(directory, pattern)) 
+             if 'region' not in os.path.basename(f)]
+    df_list = []
+    
+    for f in files:
+        # Groupby year to handle potential duplicate indices within a single model file
+        _df = pd.read_csv(f).groupby('year').mean()
+        if col_name in _df.columns:
+            df_list.append(_df[col_name])
+    
+    combined = pd.concat(df_list, axis=1)
+    
+    # Calculate statistics across columns (models)
+    mean_ts = combined.mean(axis=1)
+    var_ts = combined.var(axis=1) 
+    
+    return mean_ts, var_ts
+
+def calculate_lifetime_with_error_propagation(b_year, ts_early_mean, ts_early_var, 
+                                             ts_late_mean, ts_late_var, lifespan=75):
+    """
+    Calculates the total lifetime exposure and uncertainty for a birth cohort 
+    based on the law of error propagation.
+    
+    Logic:
+    - Total Mean = Sum of annual means over 76 years (age 0 to 75).
+    - Total SD = Sqrt(Sum of annual variances over 76 years).
+    - Handles transition between 11-model (pre-2100) and 5-model (post-2100) ensembles.
+    
+    Returns:
+    --------
+    total_mean : float
+        Cumulative exposure days over a lifetime.
+    total_sd : float
+        Propagated uncertainty (standard deviation) for the lifetime total.
+    lifetime_series : list
+        List of annual mean values for stage-specific slicing (e.g., childhood vs. aged).
+    """
+    total_mean = 0
+    total_variance = 0
+    lifetime_series = []
+    
+    for age in range(lifespan + 1): # Age 0 to 75 = 76 years
+        yr = b_year + age
+        
+        # Switch logic: Use 11-model ensemble for years <= 2100, 5-model thereafter
+        if yr <= 2100:
+            if yr in ts_early_mean.index:
+                m = ts_early_mean.loc[yr]
+                v = ts_early_var.loc[yr]
+            else: continue
+        else:
+            if yr in ts_late_mean.index:
+                m = ts_late_mean.loc[yr]
+                v = ts_late_var.loc[yr]
+            else: continue
+            
+        total_mean += m
+        total_variance += v
+        lifetime_series.append(m)
+            
+    total_sd = np.sqrt(total_variance)
+    
+    return total_mean, total_sd, lifetime_series
