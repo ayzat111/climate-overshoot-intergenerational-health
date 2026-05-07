@@ -17,6 +17,7 @@ All data and scripts are publicly available; a few remaining scripts are still b
   - **Cohort Logic**: 75-year lifetime exposure integration and overshoot scenario synthesis.
 - `plot_fig1.py`: Generates the multi-panel figure covering heatwave frequency, duration, and intensity (2015–2100).
 - `plot_fig2.py`: Temporal evolution of heatwave hazards and intergenerational disparities in lifetime exposure under an overshoot pathway.
+- `plot_fig3.py`: Lifetime and aged exposure heatwave days across birth cohorts under the SSP5-3.4OS scenario.
 - `plot_future_figs.py`: *(Being finalized)* Spatial inequality maps and elderly health risk projections.
 
 ## 📊 Data Availability
