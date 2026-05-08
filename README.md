@@ -18,7 +18,8 @@ All data and scripts are publicly available; a few remaining scripts are still b
 - `plot_fig1.py`: Generates the multi-panel figure covering heatwave frequency, duration, and intensity (2015–2100).
 - `plot_fig2.py`: Temporal evolution of heatwave hazards and intergenerational disparities in lifetime exposure under an overshoot pathway.
 - `plot_fig3.py`: Lifetime and aged exposure heatwave days across birth cohorts under the SSP5-3.4OS scenario.
-- `plot_future_figs.py`: *(Being finalized)* Spatial inequality maps and elderly health risk projections.
+- `plot_fig4.py`: Temporal shift between the peak cohorts of lifetime heatwave exposure and heatwave-related health risk.
+- `plot_future_figs.py`: *(Being finalized)*
 
 ## 📊 Data Availability
 Raw climate data and intermediate processed results are **not** included in this repository due to size constraints.Users must obtain the following data to replicate the analysis:
