@@ -128,3 +128,46 @@ def find_gbd_region_optimized(ne_name, gbd_map):
     for gbd_n in gbd_map.keys():
         if target in gbd_n or gbd_n in target: return gbd_map[gbd_n]
     return np.nan
+
+# =============================================================================
+# 5. COHORT METRICS CALCULATION
+# =============================================================================
+
+def calculate_cohort_metrics_simple(region_series, birth_years, lifespan=75):
+    """
+    Calculates lifetime exposure and weighted health risk for multiple cohorts.
+    
+    Parameters:
+    -----------
+    region_series : pandas.Series
+        Time-series of heatwave days (index is year).
+    birth_years : array-like
+        List of birth years to calculate (e.g., 1950 to 2120).
+    lifespan : int
+        Lifespan to integrate (default 75).
+        
+    Returns:
+    --------
+    abs_days : np.array
+        Total lifetime exposure days per cohort.
+    risk_vals : np.array
+        Total weighted health risk per cohort.
+    """
+    abs_days = []
+    risk_vals = []
+    
+    for by in birth_years:
+        t_days = 0
+        t_risk = 0
+        for age in range(lifespan + 1):
+            year = by + age
+            if year in region_series.index:
+                days = region_series.loc[year]
+                weight = get_weight_for_age(age)
+                t_days += days
+                t_risk += days * weight
+        
+        abs_days.append(t_days)
+        risk_vals.append(t_risk)
+        
+    return np.array(abs_days), np.array(risk_vals)
