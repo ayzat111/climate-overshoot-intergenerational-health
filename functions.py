@@ -171,3 +171,38 @@ def calculate_cohort_metrics_simple(region_series, birth_years, lifespan=75):
         risk_vals.append(t_risk)
         
     return np.array(abs_days), np.array(risk_vals)
+
+# =============================================================================
+# 6. CLIMATE ANOMALY & RESPONSE CURVE UTILITIES
+# =============================================================================
+
+def calculate_global_warming_anomaly(ds, hist_ds=None, var_name=None):
+    """
+    Calculates the annual GMST anomaly relative to 1850-1900 baseline.
+    """
+    if not var_name:
+        var_name = next((v for v in ['ts', 'tas'] if v in ds.data_vars), None)
+    
+    lat_key = 'lat' if 'lat' in ds.coords else 'latitude'
+    # Area-weighting (cosine of latitude)
+    weights = np.cos(np.deg2rad(ds[lat_key]))
+    
+    # Calculate baseline from historical dataset if provided
+    if hist_ds is not None:
+        t_base = hist_ds[var_name].weighted(weights).mean(dim=list(hist_ds[var_name].dims)[1:]).sel(time=slice('1850', '1900')).mean().compute().values
+    else:
+        # Fallback if baseline is already inside ds (less common)
+        t_base = ds[var_name].weighted(weights).mean(dim=list(ds[var_name].dims)[1:]).sel(time=slice('1850', '1900')).mean().compute().values
+
+    # Annual global mean
+    t_fut = ds[var_name].weighted(weights).mean(dim=list(ds[var_name].dims)[1:]).resample(time='YS').mean().compute()
+    
+    anomaly = t_fut - t_base
+    years = [int(pd.to_datetime(str(t)).year) for t in anomaly.time.values]
+    return pd.Series(anomaly.values, index=years)
+
+def fit_response_curve(warming_series, exposure_series, degree=2):
+    """Fits a polynomial response curve between warming levels and exposure."""
+    df = pd.DataFrame({'w': warming_series, 'e': exposure_series}).dropna()
+    z = np.polyfit(df['w'], df['e'], degree)
+    return np.poly1d(z)
