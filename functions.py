@@ -2,12 +2,14 @@
 """
 Utility module for "Overshoot Pathways and Intergenerational Heatwave Risk" project.
 Contains core functions for climate data processing, heatwave identification, 
-and ensemble-based scenario synthesis.
+regional aggregation, and health risk assessment.
 """
 
 import numpy as np
 import xarray as xr
 import pandas as pd
+import glob
+import os
 
 # =============================================================================
 # 1. DATA I/O & GRID PREPROCESSING
@@ -26,6 +28,7 @@ def open_concat(paths, dask_kwargs={'chunks': {'time': 365}}):
 
 def remap_to_common(da):
     """Interpolates a DataArray to the common 1x1 degree target grid."""
+    if 'longitude' in da.coords: da = da.rename({'longitude': 'lon', 'latitude': 'lat'})
     return da.interp(lon=target_ds.lon, lat=target_ds.lat,
                      method='linear', kwargs={'fill_value': 'extrapolate'})
 
@@ -39,21 +42,6 @@ def calc_threshold(his_files):
     ds = ds.sel(time=slice('1850', '1900'))
     return remap_to_common(ds).quantile(0.95, dim='time').compute()
 
-def identify_heatwave(da, thresh):
-    """Calculates annual heatwave frequency (events with 3+ day streaks)."""
-    da = remap_to_common(da)
-    exceed = da > thresh
-    
-    # Calculate streak duration
-    cum = exceed.cumsum(dim='time')
-    streak = cum - cum.where(~exceed).ffill(dim='time').fillna(0)
-    
-    # Identify the start of a heatwave (first time streak reaches 3)
-    hw_start = (streak >= 3) & (streak.shift(time=1) < 3)
-    
-    annual = hw_start.resample(time='Y').sum()
-    return annual.assign_coords(year=('time', annual.time.dt.year.data))
-
 def identify_heatwave_days(da, thresh):
     """Calculates annual total heatwave days (any day within a 3+ day streak)."""
     da = remap_to_common(da)
@@ -62,7 +50,7 @@ def identify_heatwave_days(da, thresh):
     cum = exceed.cumsum(dim='time')
     streak = cum - cum.where(~exceed).ffill(dim='time').fillna(0)
     
-    # Mark all days belonging to a valid heatwave event
+    # Mark all days belonging to a valid heatwave event (streak >= 3)
     hw_events = (streak >= 3)
     # Use rolling max to ensure the first two days of the streak are also flagged
     hw_days = hw_events.rolling(time=3, center=False).max().shift(time=-2).fillna(False) | hw_events
@@ -70,194 +58,73 @@ def identify_heatwave_days(da, thresh):
     annual_days = hw_days.resample(time='Y').sum()
     return annual_days.assign_coords(year=('time', annual_days.time.dt.year.data))
 
-def identify_heatwave_intensity(da, thresh):
-    """
-    Calculates annual cumulative heatwave intensity.
-    Intensity is defined as the sum of (Tmax - threshold) for all days 
-    belonging to a 3+ day exceedance streak.
-    """
-    da = remap_to_common(da)
-    diff = da - thresh
-    is_hot = diff > 0
-    
-    # Identify streaks of at least 3 days
-    hot_3d = is_hot.rolling(time=3, center=False).sum() >= 3
-    
-    # Backfill to ensure all days in the 3-day window are marked
-    hw_day = (hot_3d | 
-              hot_3d.shift(time=-1, fill_value=False) | 
-              hot_3d.shift(time=-2, fill_value=False))
-    
-    # Extract exceedance values only during heatwave days
-    hw_exceedance = diff.where(hw_day, 0.0)
-    
-    # Sum exceedance annually
-    annual_intensity = hw_exceedance.resample(time='Y').sum()
-    return annual_intensity.assign_coords(year=('time', annual_intensity.time.dt.year.data))
-
 # =============================================================================
-# 3. SPATIAL & STATISTICAL ANALYSIS
+# 3. ENSEMBLE STATISTICS & ERROR PROPAGATION
 # =============================================================================
-
-def global_mean(da):
-    """Calculates area-weighted global mean using cosine of latitude."""
-    cos_lat = np.cos(np.deg2rad(da.lat))
-    weight = cos_lat * (da * 0 + 1)
-    return (da * weight).sum(dim=('lat', 'lon')) / weight.sum(dim=('lat', 'lon'))
-
-def population_weighted_mean(da, pop):
-    """
-    Calculates population-weighted mean for a climate variable.
-    da: DataArray (time/year, lat, lon)
-    pop: DataArray (lat, lon) or (time, lat, lon) - population distribution
-    """
-    # Ensure the heatwave data is interpolated to the population grid
-    da_interp = da.interp_like(pop, method='nearest')
-    
-    # Calculate weights: Pop_grid / Total_Global_Pop
-    # We sum over lat and lon to get the total population at each time step
-    weights = pop / pop.sum(dim=['lat', 'lon'])
-    
-    # Weighted average
-    weighted_mean = (da_interp * weights).sum(dim=['lat', 'lon'])
-    return weighted_mean
-
-# =============================================================================
-# 4. SCENARIO SYNTHESIS (OVERSHOOT HANDLING)
-# =============================================================================
-
-def make_ssp534os_full(df, model):
-    """Concatenates SSP585 (up to 2039) and SSP534os (from 2040) for frequency data."""
-    df585 = df.query("model==@model & scenario=='ssp585' & year<=2039").copy().assign(scenario='ssp534os')
-    df534 = df.query("model==@model & scenario=='ssp534os'").copy()
-    
-    df_out = df[~((df['model']==model) & (df['scenario']=='ssp534os'))]
-    return pd.concat([df_out, df585, df534], ignore_index=True)
-
-def make_ssp534os_full_days(df, model):
-    """Concatenates SSP585 (up to 2039) and SSP534os (from 2040) for duration data."""
-    # Logic is identical to frequency; kept separate for workflow clarity
-    return make_ssp534os_full(df, model)
-
-# =============================================================================
-# 5. COHORT ANALYSIS (NEW SECTION)
-# =============================================================================
-
-def calculate_lifetime_exposure(df_series, birth_year, lifespan=75):
-    """
-    Integrates total exposure over a fixed lifespan for a specific birth cohort.
-    
-    Parameters:
-    -----------
-    df_series : pandas.Series
-        The time-series of heatwave days/frequency with 'year' as the index.
-    birth_year : int
-        The year the cohort was born.
-    lifespan : int
-        Number of years to integrate (default 75 for life expectancy).
-        
-    Returns:
-    --------
-    float : Total cumulative exposure over 75 years.
-    """
-    start_yr = birth_year
-    end_yr = birth_year + lifespan - 1 # e.g., 1990 to 2064 is 75 years
-    
-    if start_yr in df_series.index and end_yr in df_series.index:
-        return df_series.loc[start_yr:end_yr].sum()
-    else:
-        # Returns NaN if the time series doesn't cover the full lifespan
-        return np.nan
-        
-# =============================================================================
-# 6. ENSEMBLE STATISTICS & ERROR PROPAGATION
-# =============================================================================
-
-import glob
-import os
 
 def get_ensemble_stats_with_variance(directory, pattern, col_name='hw_days'):
-    """
-    Loads all model CSV files in a directory and calculates annual ensemble mean 
-    and inter-model variance. Used for cross-generational error propagation.
-    
-    Parameters:
-    -----------
-    directory : str
-        Path to the directory containing processed CSV files.
-    pattern : str
-        Glob pattern to match files (e.g., "*_ts.csv").
-    col_name : str
-        The column to analyze (default: 'hw_days').
-        
-    Returns:
-    --------
-    mean_ts : pandas.Series
-        Multi-model mean time-series.
-    var_ts : pandas.Series
-        Inter-model variance (Standard Deviation squared) time-series.
-    """
+    """Calculates annual ensemble mean and inter-model variance from CSV files."""
     files = [f for f in glob.glob(os.path.join(directory, pattern)) 
              if 'region' not in os.path.basename(f)]
     df_list = []
     
     for f in files:
-        # Groupby year to handle potential duplicate indices within a single model file
         _df = pd.read_csv(f).groupby('year').mean()
         if col_name in _df.columns:
             df_list.append(_df[col_name])
     
     combined = pd.concat(df_list, axis=1)
-    
-    # Calculate statistics across columns (models)
-    mean_ts = combined.mean(axis=1)
-    var_ts = combined.var(axis=1) 
-    
-    return mean_ts, var_ts
+    return combined.mean(axis=1), combined.var(axis=1)
 
 def calculate_lifetime_with_error_propagation(b_year, ts_early_mean, ts_early_var, 
                                              ts_late_mean, ts_late_var, lifespan=75):
-    """
-    Calculates the total lifetime exposure and uncertainty for a birth cohort 
-    based on the law of error propagation.
+    """Calculates cumulative lifetime exposure and propagated uncertainty (SD)."""
+    total_mean, total_variance, lifetime_series = 0, 0, []
     
-    Logic:
-    - Total Mean = Sum of annual means over 76 years (age 0 to 75).
-    - Total SD = Sqrt(Sum of annual variances over 76 years).
-    - Handles transition between 11-model (pre-2100) and 5-model (post-2100) ensembles.
-    
-    Returns:
-    --------
-    total_mean : float
-        Cumulative exposure days over a lifetime.
-    total_sd : float
-        Propagated uncertainty (standard deviation) for the lifetime total.
-    lifetime_series : list
-        List of annual mean values for stage-specific slicing (e.g., childhood vs. aged).
-    """
-    total_mean = 0
-    total_variance = 0
-    lifetime_series = []
-    
-    for age in range(lifespan + 1): # Age 0 to 75 = 76 years
+    for age in range(lifespan + 1):
         yr = b_year + age
-        
-        # Switch logic: Use 11-model ensemble for years <= 2100, 5-model thereafter
+        # Switch logic for multi-ensemble transition (11-model to 5-model)
         if yr <= 2100:
             if yr in ts_early_mean.index:
-                m = ts_early_mean.loc[yr]
-                v = ts_early_var.loc[yr]
+                m, v = ts_early_mean.loc[yr], ts_early_var.loc[yr]
             else: continue
         else:
             if yr in ts_late_mean.index:
-                m = ts_late_mean.loc[yr]
-                v = ts_late_var.loc[yr]
+                m, v = ts_late_mean.loc[yr], ts_late_var.loc[yr]
             else: continue
             
         total_mean += m
         total_variance += v
         lifetime_series.append(m)
             
-    total_sd = np.sqrt(total_variance)
-    
-    return total_mean, total_sd, lifetime_series
+    return total_mean, np.sqrt(total_variance), lifetime_series
+
+# =============================================================================
+# 4. REGIONAL AGGREGATION & HEALTH RISK
+# =============================================================================
+
+# Vulnerability weights based on GBD (Global Burden of Disease) 2021 age-mortality
+GBD_AGE_WEIGHTS = {
+    (0, 4): 0.029338843, (5, 9): 0.009090909, (10, 19): 0.01446281,
+    (20, 54): 0.107438017, (55, 59): 0.293801653, (60, 75): 0.545867769 
+}
+
+def get_weight_for_age(age):
+    """Returns GBD vulnerability weight for a specific age."""
+    for (start, end), weight in GBD_AGE_WEIGHTS.items():
+        if start <= age <= end: return weight
+    return 0
+
+def find_gbd_region_optimized(ne_name, gbd_map):
+    """Maps Natural Earth country names to GBD Level 2/3 Regions."""
+    manual_map = {
+        "Russia": "Russian Federation", "United States of America": "United States",
+        "China": "China", "Dem. Rep. Congo": "Congo, Democratic Republic of the",
+        "Turkey": "Türkiye", "Vietnam": "Viet Nam"
+    }
+    target = manual_map.get(ne_name, ne_name)
+    if target in gbd_map: return gbd_map[target]
+    # Fuzzy matching for minor naming discrepancies
+    for gbd_n in gbd_map.keys():
+        if target in gbd_n or gbd_n in target: return gbd_map[gbd_n]
+    return np.nan
